@@ -5,6 +5,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   fetch_places("All");
+  loadPriceFilter();
   const loginForm = document.getElementById('login-form');
 
   if (loginForm) {
@@ -17,6 +18,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+function loadPriceFilter(){
+  const price_filter = document.querySelector("#price-filter");
+  price_filter.innerHTML = "";
+  price_filter.innerHTML += `
+  <option value="All">All</option>
+  <option value="10">$10</option>
+  <option value="50">$50</option>
+  <option value="100">$100</option>
+  `;
+}
 
 async function loginUser(email, password) {
   let response = await fetch("http://127.0.0.1:5000/api/v1/auth/login", {
@@ -55,7 +67,7 @@ function getCookie(name) {
   if (parts.length === 2) return parts.pop().split(';').shift();
 }
 
-const price_filter = document.getElementById("#price-filter");
+const price_filter = document.querySelector("#price-filter");
 price_filter.addEventListener("change", () => {
   const selected_value = price_filter.value;
   fetch_places(selected_value);
@@ -74,12 +86,12 @@ async function fetch_places(value) {
   if (response.ok) {
     const data = await response.json();
 
-    if (value == "All") {
+    if (value === "All") {
       places = data;
     } else {
       for (let i = 0; i < data.length; i++) {
-        if (data[i].price <= value) {
-          places.push(data);
+        if (data[i].price <= Number(value)) {
+          places.push(data[i]);
         }
       }
     }
@@ -100,9 +112,9 @@ function displayPlaces(places) {
     placesContainer.innerHTML += `
     <div class="place-card">
     <h3>${place.title}</h3>
-    <p>${place.price}</p>
-    <input class="details-button">View Details</input>
+    <p>$${place.price}</p>
+    <input type="button" class="details-button" value="View Details">
     </div>
-`
+`;
   }
 }

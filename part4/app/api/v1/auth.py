@@ -20,7 +20,8 @@ class Login(Resource):
             return {"error": "Invalid credentials"}, 401
 
         token = create_access_token(
-            identity={"id": str(user.id), "is_admin": user.is_admin}
+            identity=str(user.id),
+            additional_claims={"is_admin": user.is_admin}
         )
         return {"access_token": token}, 200
 

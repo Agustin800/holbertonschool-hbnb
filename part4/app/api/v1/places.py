@@ -1,7 +1,7 @@
 from flask_restx import Namespace, Resource, fields
 from app.services import facade
 from flask import request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 api = Namespace('places', description='Place operations')
 
@@ -42,8 +42,7 @@ class PlaceList(Resource):
     @api.response(400, 'Invalid input data')
     def post(self):
         """Register a new place"""
-        current_user = get_jwt_identity()
-        owner_id = current_user["id"]
+        owner_id = get_jwt_identity()
         owner = facade.get_user(owner_id)
         data = api.payload
         existing_place = facade.get_place(data['title'])
@@ -119,23 +118,28 @@ class PlaceResource(Resource):
     def put(self, place_id):
         current_user = get_jwt_identity()
         place = facade.get_place(place_id)
-        if not place: #corrobora que el lugar existe
-            return {'error': 'place not found'}, 404
-        elif place.owner_id != current_user["id"]: #corrobora que el usuario actual es el propietario del lugar
+
+        if not place:
+            return {'error': 'Place not found'}, 404
+
+        if place.owner_id != current_user:
             return {'error': 'Unauthorized action'}, 403
-        else: # si el lugar existe y el usuario es el propietario, procede a actualizar
-            place_data = api.payload
-            try:
-                updated_place = facade.update_place(place_id, place_data)
-                return {'message': 'place updated successfully', 'place': {
+
+        place_data = api.payload
+        try:
+            updated_place = facade.update_place(place_id, place_data)
+            return {
+                'message': 'Place updated successfully',
+                'place': {
                     'id': updated_place.id,
                     'title': updated_place.title,
                     'description': updated_place.description,
                     'price': updated_place.price,
                     'latitude': updated_place.latitude,
                     'longitude': updated_place.longitude,
-                    'amenities': updated_place.amenities
-                }}, 200
+                    'amenities': [a.to_dict() for a in updated_place.amenities]
+                }
+            }, 200
 
-            except ValueError as e:
-                return {'error': str(e)}, 400
+        except ValueError as e:
+            return {'error': str(e)}, 400

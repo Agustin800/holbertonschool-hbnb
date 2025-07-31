@@ -8,7 +8,7 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 jwt = JWTManager()
 
-from app.models.user import User  # asegúrate de que el path sea correcto
+from app.models.user import User
 from app.models.amenity import Amenity
 
 def create_admin_user():
@@ -44,14 +44,13 @@ def create_admin_user():
 
 def create_app(config_class="config.DevelopmentConfig"):
     from flask_cors import CORS
-
     app = Flask(__name__)
 
     # Configuraciones
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///prueba.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config.from_object(config_class)
-    app.config["JWT_SECRET_KEY"] = app.config["SECRET_KEY"]
+    #app.config["JWT_SECRET_KEY"] = app.config["SECRET_KEY"]
 
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
