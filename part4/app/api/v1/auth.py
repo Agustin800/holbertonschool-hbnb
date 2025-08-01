@@ -9,7 +9,7 @@ login_model = api.model("Login", {
     "password": fields.String(required=True, description="User password")
 })
 
-@api.route("/login", methods=["POST", "OPTIONS"])
+@api.route("/login")
 class Login(Resource):
     @api.expect(login_model)
     def post(self):
@@ -20,10 +20,6 @@ class Login(Resource):
             return {"error": "Invalid credentials"}, 401
 
         token = create_access_token(
-            identity=str(user.id),
-            additional_claims={"is_admin": user.is_admin}
+            identity={"id": str(user.id), "is_admin": user.is_admin}
         )
         return {"access_token": token}, 200
-
-    def options(self):
-        return {}, 200

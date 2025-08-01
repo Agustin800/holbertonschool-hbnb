@@ -3,12 +3,13 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_restx import Api
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 jwt = JWTManager()
 
-from app.models.user import User
+from app.models.user import User  # asegúrate de que el path sea correcto
 from app.models.amenity import Amenity
 
 def create_admin_user():
@@ -43,20 +44,18 @@ def create_admin_user():
             db.session.commit()
 
 def create_app(config_class="config.DevelopmentConfig"):
-    from flask_cors import CORS
     app = Flask(__name__)
 
     # Configuraciones
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///prueba.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config.from_object(config_class)
-    #app.config["JWT_SECRET_KEY"] = app.config["SECRET_KEY"]
-
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+    app.config["JWT_SECRET_KEY"] = app.config["SECRET_KEY"]
 
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
+    CORS(app)
 
     # API setup
     api = Api(app, version='1.0', title='HBnB API', description='HBnB Application API')

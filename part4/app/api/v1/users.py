@@ -20,13 +20,12 @@ class UserList(Resource):
     @api.response(400, 'Invalid input data')
     @jwt_required()
     def post(self):
-        current_user_id = get_jwt_identity()
-        claims = get_jwt()
-
-        if not claims.get('is_admin', False):
-            return {'error': 'Admin privileges required'}, 403
-
+        """Register a new user"""
+        current_user = get_jwt_identity()
         user_data = api.payload
+
+        if not current_user.get('is_admin'):
+            return {'error': 'Admin privileges required'}, 403
 
         if 'password' not in user_data or not user_data['password']:
             return {'error': 'Password is required'}, 400
@@ -34,13 +33,9 @@ class UserList(Resource):
         existing_user = facade.get_user_by_email(user_data['email'])
         if existing_user:
             return {'error': 'Email already registered'}, 400
-
         try:
             new_user = facade.create_user(user_data)
-            return {
-                'id': new_user.id,
-                'message': 'User registered successfully'
-            }, 201
+            return {'id': new_user.id, 'message': 'User registered successfully'}, 201
         except ValueError as e:
             return {'error': 'Invalid input data', 'message': str(e)}, 400
 
@@ -59,42 +54,40 @@ class UserResource(Resource):
     @api.response(200, 'User details retrieved successfully')
     @api.response(404, 'User not found')
     def get(self, user_id):
+        """Get user details by ID"""
         user = facade.get_user(user_id)
         if not user:
             return {'error': 'User not found'}, 404
-        return {
-            'id': user.id,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'email': user.email
-        }, 200
+        return {'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'email': user.email}, 200
 
     @api.expect(user_model, validate=True)
     @api.response(200, 'User successfully updated')
     @api.response(404, 'User not found')
     @jwt_required()
     def put(self, user_id):
-        current_user_id = get_jwt_identity()
-        claims = get_jwt()
+        """Update user details"""
+        current_user = get_jwt_identity()
+        current_user_id = current_user["id"]
+        user = facade.get_user(user_id)
 
-        if not claims.get('is_admin', False):
+        if not current_user.get('is_admin'):
             return {'error': 'Admin privileges required'}, 403
 
-        user = facade.get_user(user_id)
         if not user:
             return {'error': 'User not found'}, 404
+
+        elif user_id != current_user_id:
+            return {'error': 'Unauthorized action'}
 
         user_data = api.payload
         try:
             updated_user = facade.update_user(user_id, user_data)
-            return {
-                'message': 'User updated successfully',
-                'user': {
-                    'id': updated_user.id,
-                    'first_name': updated_user.first_name,
-                    'last_name': updated_user.last_name,
-                    'email': updated_user.email
-                }
-            }, 200
+            return {'message': 'User updated successfully', 'user': {
+                'id': updated_user.id,
+                'first_name': updated_user.first_name,
+                'last_name': updated_user.last_name,
+                'email': updated_user.email
+            }}, 200
+
         except ValueError as e:
             return {'error': str(e)}, 400
